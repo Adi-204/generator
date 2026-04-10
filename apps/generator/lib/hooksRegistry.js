@@ -8,6 +8,7 @@ const { exists, registerTypeScript } = require('./utils');
  * @param {Object} templateConfig Template configuration.
  * @param {String} templateDir Directory where template is located.
  * @param {String} hooksDir Directory where local hooks are located.
+ * @param {String} hooksDir Directory where local hooks are located.
  */
 async function registerHooks (hooks, templateConfig, templateDir, hooksDir) {
   await registerLocalHooks(hooks, templateDir, hooksDir);
