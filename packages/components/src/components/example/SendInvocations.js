@@ -18,8 +18,8 @@ function toJsLiteral(value) {
   if (typeof value === 'boolean' || typeof value === 'number') return String(value);
   if (typeof value === 'string') {
     const escaped = value
-      .replace(/\\/g, '\\\\')
-      .replace(/'/g, '\\\'');
+      .replaceAll('\\', String.raw`\\`)
+      .replaceAll('\'', '\\\'');
     return `'${escaped}'`;
   }
   if (Array.isArray(value)) {
@@ -37,8 +37,8 @@ function toPyLiteral(value) {
   if (typeof value === 'number') return String(value);
   if (typeof value === 'string') {
     const escaped = value
-      .replace(/\\/g, '\\\\')
-      .replace(/'/g, '\\\'');
+      .replaceAll('\\', String.raw`\\`)
+      .replaceAll('\'', '\\\'');
     return `'${escaped}'`;
   }
   if (Array.isArray(value)) {
@@ -58,9 +58,9 @@ function toDartLiteral(value) {
     // string is a variable reference at compile time. Escape it (along with `\`
     // and `'`) so example payloads are treated as literal text.
     const escaped = value
-      .replace(/\\/g, '\\\\')
-      .replace(/'/g, '\\\'')
-      .replace(/\$/g, '\\$');
+      .replaceAll('\\', String.raw`\\`)
+      .replaceAll('\'', '\\\'')
+      .replaceAll('$', String.raw`\$`);
     return `'${escaped}'`;
   }
   if (Array.isArray(value)) {
@@ -80,7 +80,7 @@ function resolvePayloadLiteral(operation, toLiteral) {
   const message = messages[0];
   const examples = getMessageExamples(message);
   if (!examples) {
-    const name = (message.name && message.name()) || operation.id();
+    const name = message.name?.() || operation.id();
     return `'TODO: replace with payload matching ${name}'`;
   }
   return toLiteral(examples.all()[0].payload());
