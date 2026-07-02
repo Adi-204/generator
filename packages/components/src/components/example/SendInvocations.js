@@ -19,7 +19,7 @@ function toJsLiteral(value) {
   if (typeof value === 'string') {
     const escaped = value
       .replaceAll('\\', String.raw`\\`)
-      .replaceAll('\'', '\\\'');
+      .replaceAll('\'', String.raw`\'`);
     return `'${escaped}'`;
   }
   if (Array.isArray(value)) {
@@ -38,7 +38,7 @@ function toPyLiteral(value) {
   if (typeof value === 'string') {
     const escaped = value
       .replaceAll('\\', String.raw`\\`)
-      .replaceAll('\'', '\\\'');
+      .replaceAll('\'', String.raw`\'`);
     return `'${escaped}'`;
   }
   if (Array.isArray(value)) {
@@ -59,7 +59,7 @@ function toDartLiteral(value) {
     // and `'`) so example payloads are treated as literal text.
     const escaped = value
       .replaceAll('\\', String.raw`\\`)
-      .replaceAll('\'', '\\\'')
+      .replaceAll('\'', String.raw`\'`)
       .replaceAll('$', String.raw`\$`);
     return `'${escaped}'`;
   }
