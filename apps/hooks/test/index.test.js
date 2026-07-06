@@ -18,6 +18,7 @@ const dummyJSON = JSON.stringify({
 }, null, 2);
 
 const testResultPath = path.resolve(__dirname, './temp');
+const asyncapiYamlFileName = 'asyncapi.yaml';
 
 describe('createAsyncapiFile', () => {
   /**
@@ -29,7 +30,7 @@ describe('createAsyncapiFile', () => {
   });
 
   it('creates a YAML file when the originalAsyncAPI is in YAML format', async () => {
-    const outputFileName = 'asyncapi.yaml';
+    const outputFileName = asyncapiYamlFileName;
     const gen = {
       originalAsyncAPI: dummyYAML,
       targetDir: testResultPath,
@@ -60,7 +61,7 @@ describe('createAsyncapiFile', () => {
 
   it('creates the file in a custom directory when asyncapiFileDir parameter is provided', async () => {
     const customDir = 'custom-test';
-    const outputFileName = 'asyncapi.yaml';
+    const outputFileName = asyncapiYamlFileName;
     const outputFilePath = path.join(testResultPath, customDir, outputFileName);
     const gen = {
       originalAsyncAPI: dummyYAML,
@@ -85,7 +86,7 @@ describe('createAsyncapiFile', () => {
       templateParams: {}
     };
     await createAsyncapiFile(gen);
-    const outputFileContent = await readFile(path.join(testResultPath, 'asyncapi.yaml'), 'utf8');
+    const outputFileContent = await readFile(path.join(testResultPath, asyncapiYamlFileName), 'utf8');
     // No external file refs survive; internal '#/...' refs are still allowed.
     expect(outputFileContent).not.toMatch(/\.yml#/);
     expect(outputFileContent).not.toMatch(/\$ref:\s*['"]?\.\.?\//);
@@ -99,7 +100,7 @@ describe('createAsyncapiFile', () => {
       templateParams: {}
     };
     await createAsyncapiFile(gen);
-    const outputFileContent = await readFile(path.join(testResultPath, 'asyncapi.yaml'), 'utf8');
+    const outputFileContent = await readFile(path.join(testResultPath, asyncapiYamlFileName), 'utf8');
     expect(outputFileContent).toBe(dummyYAML);
   });
 });

@@ -42,6 +42,7 @@ Use name of returned templates as input for the `generate` method for template g
         * [.hooks](#Generator+hooks) : `Object`
         * [.mapBaseUrlToFolder](#Generator+mapBaseUrlToFolder) : `Object`
         * [.templateParams](#Generator+templateParams) : `Object`
+        * [.asyncapiFilePath](#Generator+asyncapiFilePath) : `String` \| `undefined`
         * [.generate(asyncapiDocument, [parseOptions])](#Generator+generate) ⇒ `Promise.<void>`
         * [.validateAsyncAPIDocument(asyncapiDocument)](#Generator+validateAsyncAPIDocument)
         * [.setupOutput()](#Generator+setupOutput)
@@ -202,6 +203,13 @@ Maps schema URL to folder.
 
 * generator.templateParams : `Object`** :
 The template parameters. The structure for this object is based on each individual template.
+
+**Kind**: instance property of [`Generator`](#Generator)  
+
+<a name="Generator+asyncapiFilePath"></a>
+
+* generator.asyncapiFilePath : `String` \| `undefined`** :
+Filesystem path of the source AsyncAPI document, exposed to hooks so they can resolve external $refs. Undefined for string/URL input.
 
 **Kind**: instance property of [`Generator`](#Generator)  
 
