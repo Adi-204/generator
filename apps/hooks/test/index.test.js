@@ -81,11 +81,10 @@ describe('createAsyncapiFile', () => {
     const sourcePath = path.resolve(__dirname, './__fixtures__/asyncapi-with-refs.yml');
     const gen = {
       originalAsyncAPI: await readFile(sourcePath, 'utf8'),
-      asyncapiFilePath: sourcePath,
       targetDir: testResultPath,
       templateParams: {}
     };
-    await createAsyncapiFile(gen);
+    await createAsyncapiFile(gen, { asyncapiFilePath: sourcePath });
     const outputFileContent = await readFile(path.join(testResultPath, asyncapiYamlFileName), 'utf8');
     // No external file refs survive; internal '#/...' refs are still allowed.
     expect(outputFileContent).not.toMatch(/\.yml#/);

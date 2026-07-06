@@ -3,11 +3,11 @@ const path = require('path');
 const xfs = require('fs.extra');
 const bundle = require('@asyncapi/bundler');
 
-async function createAsyncapiFile(generator) {
+async function createAsyncapiFile(generator, { asyncapiFilePath } = {}) {
   const asyncapi = generator.originalAsyncAPI;
   const targetDir = generator.targetDir;
   const customDirInTarget = generator.templateParams.asyncapiFileDir;
-  const sourceFilePath = generator.asyncapiFilePath;
+  const sourceFilePath = asyncapiFilePath;
   const getCustomFileLocation = (target, dir, filename) => {
     xfs.mkdirpSync(path.resolve(target, dir));
     return path.resolve(target, dir, filename);

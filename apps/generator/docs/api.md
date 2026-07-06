@@ -42,7 +42,6 @@ Use name of returned templates as input for the `generate` method for template g
         * [.hooks](#Generator+hooks) : `Object`
         * [.mapBaseUrlToFolder](#Generator+mapBaseUrlToFolder) : `Object`
         * [.templateParams](#Generator+templateParams) : `Object`
-        * [.asyncapiFilePath](#Generator+asyncapiFilePath) : `String` \| `undefined`
         * [.generate(asyncapiDocument, [parseOptions])](#Generator+generate) ⇒ `Promise.<void>`
         * [.validateAsyncAPIDocument(asyncapiDocument)](#Generator+validateAsyncAPIDocument)
         * [.setupOutput()](#Generator+setupOutput)
@@ -51,7 +50,7 @@ Use name of returned templates as input for the `generate` method for template g
         * [.installAndSetupTemplate()](#Generator+installAndSetupTemplate) ⇒ `Promise.<{templatePkgName: string, templatePkgPath: string}>`
         * [.configureTemplateWorkflow(parseOptions)](#Generator+configureTemplateWorkflow) ⇒ `Promise.<void>`
         * [.handleEntrypoint()](#Generator+handleEntrypoint) ⇒ `Promise.<void>`
-        * [.executeAfterHook()](#Generator+executeAfterHook) ⇒ `Promise.<void>`
+        * [.executeAfterHook([parseOptions])](#Generator+executeAfterHook) ⇒ `Promise.<void>`
         * [.parseInput()](#Generator+parseInput)
         * [.configureTemplate()](#Generator+configureTemplate)
         * [.generateFromURL(asyncapiURL)](#Generator+generateFromURL) ⇒ `Promise.<(TemplateRenderResult|undefined)>`
@@ -206,13 +205,6 @@ The template parameters. The structure for this object is based on each individu
 
 **Kind**: instance property of [`Generator`](#Generator)  
 
-<a name="Generator+asyncapiFilePath"></a>
-
-* generator.asyncapiFilePath : `String` \| `undefined`** :
-Filesystem path of the source AsyncAPI document, exposed to hooks so they can resolve external $refs. Undefined for string/URL input.
-
-**Kind**: instance property of [`Generator`](#Generator)  
-
 <a name="Generator+generate"></a>
 
 ### generator.generate
@@ -355,13 +347,17 @@ If no entrypoint is specified, generates the directory structure.
 
 <a name="Generator+executeAfterHook"></a>
 
-* generator.executeAfterHook() ⇒ `Promise.<void>`** :
+### generator.executeAfterHook
 Executes the 'generate:after' hook.
 
 Launches the after-hook to perform additional actions after code generation.
 
 **Kind**: instance method of [`Generator`](#Generator)  
 **Returns**: `Promise.<void>` - A promise that resolves when the after-hook execution is completed.  
+**Params**
+
+- [parseOptions] `Object` ` = {}` - AsyncAPI Parser parse options; its `path` is passed to the hook so it can resolve external $refs.
+
 
 <a name="Generator+parseInput"></a>
 

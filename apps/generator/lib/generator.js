@@ -188,15 +188,13 @@ class Generator {
    */
   async generate(asyncapiDocument, parseOptions = {}) {
     this.validateAsyncAPIDocument(asyncapiDocument);
-    /** @type {String|undefined} Filesystem path of the source AsyncAPI document, exposed to hooks so they can resolve external $refs. Undefined for string/URL input. */
-    this.asyncapiFilePath = parseOptions.path;
     await this.setupOutput();
     this.setLogLevel();
 
     await this.installAndSetupTemplate();
     await this.configureTemplateWorkflow(parseOptions);
     await this.handleEntrypoint();
-    await this.executeAfterHook();
+    await this.executeAfterHook(parseOptions);
   }
 
   /**
@@ -363,10 +361,11 @@ class Generator {
    * Launches the after-hook to perform additional actions after code generation.
    *
    * @async
+   * @param {Object} [parseOptions={}] - AsyncAPI Parser parse options; its `path` is passed to the hook so it can resolve external $refs.
    * @returns {Promise<void>} A promise that resolves when the after-hook execution is completed.
    */
-  async executeAfterHook() {
-    await this.launchHook('generate:after');
+  async executeAfterHook(parseOptions = {}) {
+    await this.launchHook('generate:after', { asyncapiFilePath: parseOptions.path });
   }
 
   /**
