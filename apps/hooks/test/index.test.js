@@ -35,7 +35,7 @@ describe('createAsyncapiFile', () => {
       targetDir: testResultPath,
       templateParams: {}
     };
-    createAsyncapiFile(gen);
+    await createAsyncapiFile(gen);
     const outputFile = path.join(testResultPath, outputFileName);
     const checkOutputFileExists = await stat(outputFile);
     expect(checkOutputFileExists.isFile()).toBeTruthy();
@@ -50,7 +50,7 @@ describe('createAsyncapiFile', () => {
       targetDir: testResultPath,
       templateParams: {}
     };
-    createAsyncapiFile(gen);
+    await createAsyncapiFile(gen);
     const outputFile = path.join(testResultPath, outputFileName);
     const checkOutputFileExists = await stat(outputFile);
     expect(checkOutputFileExists.isFile()).toBeTruthy();
@@ -69,10 +69,37 @@ describe('createAsyncapiFile', () => {
         asyncapiFileDir: customDir
       }
     };
-    createAsyncapiFile(gen);
+    await createAsyncapiFile(gen);
     const checkOutputFileExists = await stat(outputFilePath);
     expect(checkOutputFileExists.isFile()).toBeTruthy();
     const outputFileContent = await readFile(outputFilePath, 'utf8');
+    expect(outputFileContent).toBe(dummyYAML);
+  });
+
+  it('bundles external $refs into a self-contained document when a source path is available', async () => {
+    const sourcePath = path.resolve(__dirname, './__fixtures__/asyncapi-with-refs.yml');
+    const gen = {
+      originalAsyncAPI: await readFile(sourcePath, 'utf8'),
+      asyncapiFilePath: sourcePath,
+      targetDir: testResultPath,
+      templateParams: {}
+    };
+    await createAsyncapiFile(gen);
+    const outputFileContent = await readFile(path.join(testResultPath, 'asyncapi.yaml'), 'utf8');
+    // No external file refs survive; internal '#/...' refs are still allowed.
+    expect(outputFileContent).not.toMatch(/\.yml#/);
+    expect(outputFileContent).not.toMatch(/\$ref:\s*['"]?\.\.?\//);
+    expect(outputFileContent).toContain('channels:');
+  });
+
+  it('falls back to writing the original source verbatim when no source path is available', async () => {
+    const gen = {
+      originalAsyncAPI: dummyYAML,
+      targetDir: testResultPath,
+      templateParams: {}
+    };
+    await createAsyncapiFile(gen);
+    const outputFileContent = await readFile(path.join(testResultPath, 'asyncapi.yaml'), 'utf8');
     expect(outputFileContent).toBe(dummyYAML);
   });
 });

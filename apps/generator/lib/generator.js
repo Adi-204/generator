@@ -188,6 +188,7 @@ class Generator {
    */
   async generate(asyncapiDocument, parseOptions = {}) {
     this.validateAsyncAPIDocument(asyncapiDocument);
+    this.asyncapiFilePath = parseOptions.path; // expose source path to hooks (undefined for string input)
     await this.setupOutput();
     this.setLogLevel();
 

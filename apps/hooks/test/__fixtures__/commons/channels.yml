@@ -1,0 +1,6 @@
+channels:
+  echo:
+    address: /
+    messages:
+      echo:
+        $ref: '../commons/messages.yml#/messages/echo'
