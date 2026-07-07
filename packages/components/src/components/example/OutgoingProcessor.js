@@ -23,8 +23,9 @@ const outgoingProcessorConfig = {
 }`,
   python: `def outgoing_message_processor(message):
     """Process outgoing messages before they are sent (e.g., wrap with metadata)."""
+    from datetime import datetime
     print(f"Outgoing processor fired: {message}")
-    return {"payload": message, "timestamp": "2025-01-01T00:00:00Z"}`,
+    return {"payload": message, "timestamp": datetime.now().isoformat()}`,
 };
 
 /**

@@ -6,7 +6,7 @@ import { unsupportedLanguage } from '../../utils/ErrorHandling';
  * Supported programming languages for the example imports block.
  */
 
-const stripExtension = (fileName, ext) => fileName.replace(ext, '');
+const stripExtension = (fileName, ext) => (fileName.endsWith(ext) ? fileName.slice(0, -ext.length) : fileName);
 
 /**
  * Per-language renderer for the top-of-file imports block in the runnable

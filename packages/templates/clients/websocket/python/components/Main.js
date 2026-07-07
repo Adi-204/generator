@@ -10,7 +10,7 @@ export function Main({ clientName, instanceName, sendOps, receiveOps }) {
     ? receiveOps
       .map((op) => {
         const snake = toSnakeCase(op.id());
-        return `    ${instanceName}.register_${snake}_handler(handle_${snake})`;
+        return `${instanceName}.register_${snake}_handler(handle_${snake})`;
       })
       .join('\n')
     : '';
@@ -20,7 +20,7 @@ export function Main({ clientName, instanceName, sendOps, receiveOps }) {
       <Text>{'def main():'}</Text>
       <Text indent={4}>{`${instanceName} = ${clientName}()`}</Text>
       {hasReceive && (
-        <Text>{receiveRegistrations}</Text>
+        <Text indent={4}>{receiveRegistrations}</Text>
       )}
       <Text indent={4} newLines={2}>{`${instanceName}.register_error_handler(custom_error_handler)`}</Text>
       {hasSend && (

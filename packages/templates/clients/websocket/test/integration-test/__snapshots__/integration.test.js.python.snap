@@ -1840,8 +1840,9 @@ def custom_error_handler(error):
 
 def outgoing_message_processor(message):
     \\"\\"\\"Process outgoing messages before they are sent (e.g., wrap with metadata).\\"\\"\\"
+    from datetime import datetime
     print(f\\"Outgoing processor fired: {message}\\")
-    return {\\"payload\\": message, \\"timestamp\\": \\"2025-01-01T00:00:00Z\\"}
+    return {\\"payload\\": message, \\"timestamp\\": datetime.now().isoformat()}
 
 def main():
     hoppscotch_client = HoppscotchClient()
@@ -2306,8 +2307,9 @@ def custom_error_handler(error):
 
 def outgoing_message_processor(message):
     \\"\\"\\"Process outgoing messages before they are sent (e.g., wrap with metadata).\\"\\"\\"
+    from datetime import datetime
     print(f\\"Outgoing processor fired: {message}\\")
-    return {\\"payload\\": message, \\"timestamp\\": \\"2025-01-01T00:00:00Z\\"}
+    return {\\"payload\\": message, \\"timestamp\\": datetime.now().isoformat()}
 
 def main():
     hoppscotch_echo_web_socket_client = HoppscotchEchoWebSocketClient()
@@ -2687,8 +2689,9 @@ def custom_error_handler(error):
 
 def outgoing_message_processor(message):
     \\"\\"\\"Process outgoing messages before they are sent (e.g., wrap with metadata).\\"\\"\\"
+    from datetime import datetime
     print(f\\"Outgoing processor fired: {message}\\")
-    return {\\"payload\\": message, \\"timestamp\\": \\"2025-01-01T00:00:00Z\\"}
+    return {\\"payload\\": message, \\"timestamp\\": datetime.now().isoformat()}
 
 def main():
     postman_echo_web_socket_client_client = PostmanEchoWebSocketClientClient()

@@ -34,9 +34,10 @@ function buildPythonHandlers(receiveOps) {
   const ops = Array.isArray(receiveOps) ? receiveOps : [];
   const handlerDefs = ops
     .map((op) => {
-      const snake = toSnakeCase(op.id());
+      const id = op.id();
+      const snake = toSnakeCase(id);
       return `def handle_${snake}(message):
-    print(f"[${op.id()}] Received message: {message}")`;
+    print(f"[${id}] Received message: {message}")`;
     })
     .join('\n\n');
 
