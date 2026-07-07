@@ -2,6 +2,19 @@ import { Text } from '@asyncapi/generator-react-sdk';
 import { toSnakeCase } from '@asyncapi/generator-helpers';
 import { OpenConnection, Close, SendInvocations } from '@asyncapi/generator-components';
 
+// Seconds the generated example keeps the connection alive to receive messages; users increase as needed.
+const KEEP_ALIVE_SECONDS = 30;
+
+/**
+ * Renders the Python `main()` entry point for the generated WebSocket example.
+ *
+ * @param {Object} props - Component props.
+ * @param {string} props.clientName - Name of the generated client class.
+ * @param {string} props.instanceName - Variable name used for the client instance.
+ * @param {Array<object>} props.sendOps - Send operations used to conditionally emit outgoing-message logic.
+ * @param {Array<object>} props.receiveOps - Receive operations used to generate per-operation handler registrations.
+ * @returns {JSX.Element} A `Text` component containing the rendered `main()` source.
+ */
 export function Main({ clientName, instanceName, sendOps, receiveOps }) {
   const hasSend = Array.isArray(sendOps) && sendOps.length > 0;
   const hasReceive = Array.isArray(receiveOps) && receiveOps.length > 0;
@@ -32,7 +45,7 @@ export function Main({ clientName, instanceName, sendOps, receiveOps }) {
         <SendInvocations language="python" instanceName={instanceName} sendOps={sendOps} />
       )}
       {hasReceive && (
-        <Text indent={8}>{'time.sleep(30)  # Increase as needed to keep the connection alive longer'}</Text>
+        <Text indent={8}>{`time.sleep(${KEEP_ALIVE_SECONDS})  # Increase as needed to keep the connection alive longer`}</Text>
       )}
       <Text indent={4}>{'except Exception as error:'}</Text>
       <Text indent={8}>{'print(f"Failed to connect to WebSocket: {error}")'}</Text>
