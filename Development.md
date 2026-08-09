@@ -113,6 +113,8 @@ feat: add new feature
 To ensure successful workflow execution, all PR titles must follow the Conventional Commits format and PR titles should start with a lowercase character. Incorrect PR titles can cause workflow failures, preventing PRs from being merged.
 For the PR titles you can refer to [this guide](CONTRIBUTING.md?plain=1#L60)
 
+**Changesets and Release:** If the PR includes a new or updated `.changeset/*.md` file, the title must start with `fix:`, `fix!:`, `feat:`, or `feat!:`—not a scoped title like `fix(hooks):`. CI job **Verify changeset release alignment** checks that a changeset and one of those titles appear together. (`chore(release):` is used by release bot PRs, which skip this check.) See [Release process](#release-process) below.
+
 #### Manual
 
 1.  Create a new release markdown file in the `.changeset` directory. The filename should indicate what the change is about.
