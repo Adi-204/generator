@@ -55,7 +55,7 @@ Every template directory **must include**:
 Generator build runs a script that normalizes metadata for baked-in templates and their naming:
 - Adds/updates metadata in `.ageneratorrc` file. You do not have to maintain it manually.
 - Validates/updates template name in `package.json` file of given template. The name always starts with `core-template-` prefix.
-- Generates JSON file with list of baked in templates and stores the list inside the generator: `apps/generator/lib/templates/BakedInTemplatesList.json`
+- Generates JSON file with list of baked-in templates and stores the list inside the generator: `apps/generator/lib/templates/BakedInTemplatesList.json`
 
 The script lives at [`apps/generator/scripts/build-templates.js`](https://github.com/asyncapi/generator/blob/master/apps/generator/scripts/build-templates.js) and runs on `npm run build` and automatically before every test run (as the `pretest` hook), locally and in CI.
 

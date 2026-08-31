@@ -237,8 +237,11 @@ async function collectTemplates(dir, relPath = [], result = []) {
 /**
  * Reads, updates, and writes the .ageneratorrc YAML file with the new metadata,
  * injecting a comment above the metadata block that marks it as auto-generated.
+ * @async
  * @param {string} ageneratorrcPath - Path to the .ageneratorrc file.
  * @param {Object} meta - Metadata object to set.
+ * @returns {Promise<void>}
+ * @throws {Error} When the .ageneratorrc file cannot be read or parsed, or when writing it back fails.
  */
 async function updateAGeneratorRc(ageneratorrcPath, meta) {
   let ageneratorrc;
