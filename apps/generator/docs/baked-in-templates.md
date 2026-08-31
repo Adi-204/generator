@@ -57,7 +57,8 @@ Generator build runs a script that normalizes metadata for baked-in templates an
 - Validates/updates template name in `package.json` file of given template. The name always starts with `core-template-` prefix.
 - Generates JSON file with list of baked-in templates and stores the list inside the generator: `apps/generator/lib/templates/BakedInTemplatesList.json`
 
-The script lives at [`apps/generator/scripts/build-templates.js`](https://github.com/asyncapi/generator/blob/master/apps/generator/scripts/build-templates.js) and runs on `npm run build` and automatically before every test run (as the `pretest` hook), locally and in CI.
+> **Note:**
+> The `metadata` block in `.ageneratorrc` and the `name` in `package.json` are auto-generated from the template's folder path by [`apps/generator/scripts/build-templates.js`](https://github.com/asyncapi/generator/blob/master/apps/generator/scripts/build-templates.js), which runs on every `npm run build` and automatically before tests. Do not edit them manually — the build overwrites them, and any other comments you add to `.ageneratorrc` are dropped when the file is re-serialized. To change a template's metadata, rename or move its directory and run `npm run build`.
 
 #### Example
 
@@ -84,27 +85,6 @@ Resulting entry in `apps/generator/lib/templates/BakedInTemplatesList.json`:
     "stack": "express"
   }
 ```
-
-### What is auto-generated vs. maintained by you
-
-The build derives the metadata from the template's folder path following the `{type}/[protocol]/[target]/[stack]` convention and rewrites the files listed below. Everything else is left exactly as you wrote it — with one exception: `.ageneratorrc` is re-serialized from YAML on every build, so any comments you add to it are dropped.
-
-| File | Auto-generated — never edit | Maintained by you |
-|---|---|---|
-| `.ageneratorrc` | the `metadata` block and the comment above it | everything else: `apiVersion`, `parameters`, `hooks`, `conditionalGeneration`, ... |
-| `package.json` | the `name` field | everything else: dependencies, description, ... |
-| `lib/templates/BakedInTemplatesList.json` | the entire file | nothing |
-
-If you edit the `metadata` block or the package `name` by hand, the change disappears on the next build or test run — that is by design, so the path, the package name, and the metadata can never drift apart. Custom keys inside `metadata` are not supported. The generated values are committed so that reviewers, the website, and tooling can see a template's identity without running the build.
-
-### How to change a template's metadata
-
-The folder structure is the single source of truth, so change the path:
-
-- Want `stack: express` for the JavaScript WebSocket client? Move the template to `packages/templates/clients/websocket/javascript/express/`.
-- Want a new protocol or target? Create the directory in the right place following the [directory structure convention](#template-directory-structure).
-
-Then run `npm run build` and commit the resulting changes to `.ageneratorrc`, `package.json`, and `BakedInTemplatesList.json` together with the move.
 
 ## How to add a new baked-in template
 
