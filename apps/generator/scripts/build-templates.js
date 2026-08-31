@@ -16,6 +16,9 @@ const IGNORED_DIRS = ['test', '__tests__', '__fixtures__', '__snapshots__', 'com
 // Templates structure inside generator/packages/templates must follow this opinionated naming convention:
 const ALLOWED_TYPE_PATHS = ['docs', 'clients', 'sdks', 'configs'];
 
+// Comment injected above the metadata block of every baked-in template's .ageneratorrc.
+const METADATA_COMMENT = '# The metadata block below is auto-generated from the template folder structure - do not edit it manually. Learn more: https://www.asyncapi.com/docs/tools/generator/baked-in-templates';
+
 async function main() {
   const allTemplatesInfo = [];
   /*
@@ -232,7 +235,8 @@ async function collectTemplates(dir, relPath = [], result = []) {
 }
 
 /**
- * Reads, updates, and writes the .ageneratorrc YAML file with the new metadata.
+ * Reads, updates, and writes the .ageneratorrc YAML file with the new metadata,
+ * injecting a comment above the metadata block that marks it as auto-generated.
  * @param {string} ageneratorrcPath - Path to the .ageneratorrc file.
  * @param {Object} meta - Metadata object to set.
  */
@@ -250,7 +254,8 @@ async function updateAGeneratorRc(ageneratorrcPath, meta) {
     target: meta.target,
     ...(meta.stack && { stack: meta.stack }),
   };
-  const newAgeneratorrcContent = yaml.dump(ageneratorrc, { lineWidth: 120 });
+  // Why: yaml.dump cannot emit comments, so the notice is re-added above metadata on every build.
+  const newAgeneratorrcContent = yaml.dump(ageneratorrc, { lineWidth: 120 }).replace(/^metadata:/m, `${METADATA_COMMENT}\nmetadata:`);
   await writeFile(ageneratorrcPath, newAgeneratorrcContent);
 }
 
