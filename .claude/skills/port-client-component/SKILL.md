@@ -37,9 +37,13 @@ Work through these in order — each produces an artifact the execution steps co
 
 ### 1. Locate the reference implementation
 
-`Grep` the reference client's `template/` and `components/` directories for the feature's key terms (from the user's description). List the matches as **"the reference files."** This step also proves the reference actually has the feature: if the matches are ambiguous, ask the user to point at the specific file(s) rather than guessing; if nothing plausible turns up and the user can't point at a file either, stop and report "feature not found in reference client."
+`Grep` the reference client's `template/` and `components/` directories **and** its committed runnable example at the template root (`example.py` / `example.js` / `example.dart` — hand-maintained mirror of the generated example, not build output) for the feature's key terms (from the user's description). List the matches as **"the reference files."** A hit in the root example file makes the target's root example file an injection point too — that file is what the client README's manual test actually runs, so omitting it ships a port the documented test never exercises. This step also proves the reference actually has the feature: if the matches are ambiguous, ask the user to point at the specific file(s) rather than guessing; if nothing plausible turns up and the user can't point at a file either, stop and report "feature not found in reference client."
 
-### 2. Classify the mechanism
+### 2. Check sibling implementations for divergence
+
+`Grep` the *other* sibling clients that already have this feature — not just the named reference. If a sibling's implementation behaviorally diverges from the reference (observable test: the reference only registers/stores something while a sibling also applies it in the runtime path, or their generated methods differ in what they do rather than how they say it), surface the divergence via `AskUserQuestion` and let the user pick which behavior to port — before any translation. Do not silently mirror the reference when a more complete sibling exists, and do not silently "improve" on the reference either; the choice is the user's, and it must be made before the golden snippet is written because the snippet encodes it.
+
+### 3. Classify the mechanism
 
 Check whether any reference file imports from `@asyncapi/generator-components` for this feature. This determines which execution branch applies:
 
@@ -53,7 +57,9 @@ Check whether any reference file imports from `@asyncapi/generator-components` f
 
 Don't assume Branch A because a shared components package exists — confirm the specific reference files actually import from it. A reference client can have template-local logic even when unrelated shared components exist for other features.
 
-### 3. Map injection points
+A feature can span **both** branches — e.g. a local register method and constructor field (B) plus a shared example component missing the target's config entry (A). Classify each reference file separately: the branch applies per file, and a mixed feature runs both execution sections, each for its own files.
+
+### 4. Map injection points
 
 For each target client, find the file(s) structurally equivalent to the reference files — same relative path under that client's directory (the `<framework>` segment adds one directory level for stack-specific clients like `java/quarkus`). Record one row per (reference file × target) pair in a markdown table and print it back to the user:
 
@@ -61,6 +67,9 @@ For each target client, find the file(s) structurally equivalent to the referenc
 |---|---|---|---|
 | `…/websocket/python/components/Constructor.js` | dart | `…/websocket/dart/components/Constructor.js` | yes |
 | `…/websocket/python/components/Constructor.js` | java/quarkus | `…/websocket/java/quarkus/components/Constructor.js` | yes |
+| `…/websocket/python/example.py` | dart | `…/websocket/dart/example.dart` | yes |
+
+Structural equivalence is by **role**, not always by filename — e.g. python declares instance fields in `Constructor.js` while dart declares them in `ClientFields.js`; the root example file's equivalent is the target's own root example file.
 
 This table is **the injection map** — the execution steps edit exactly these target files and no others. If a target has no structurally equivalent file at all (`Exists? = no` — the feature would need an entirely new file, not an edit to an existing one), flag that row — that's a bigger change than this skill's mechanical scope assumes, and the user should confirm before you proceed.
 
@@ -117,15 +126,17 @@ Execute in order:
    },
    ```
 
-   Also extend the component's `@typedef Language` union (e.g. `'python' | 'java' | 'javascript'` → add `'dart'`). The runtime `supportedLanguages` check derives from `Object.keys(<config>)` and updates itself, but the JSDoc typedef is manual — and it's what `jsdoc2md` publishes in closing step 4.
+   Also extend the component's `@typedef Language` union (e.g. `'python' | 'java' | 'javascript'` → add `'dart'`), and delete any JSDoc note that explains why the target language was previously excluded — the port makes it stale. The typedef is manual (the runtime `supportedLanguages` check derives from `Object.keys(<config>)` and updates itself) but is not published to the API docs; see closing step 5 for how to read the docs diff.
 
 2. **Wire the shared component into targets that don't call it yet.** Add the import, plumb the required prop through the call chain the same way the reference sources it (e.g. via a helper like `getQueryParams`), and render the shared component with `language='<target>'` (and `framework='<target-framework>'` where applicable).
 
-3. **Extend the shared component's test.** If `packages/components/test/components/<Component>.test.js` exists, add one snapshot case per new language branch, following the existing per-language case pattern exactly, then regenerate the component snapshot from the repo root:
+3. **Extend the shared component's test.** If `packages/components/test/components/<Component>.test.js` exists, add one snapshot case per new language branch, following the existing per-language case pattern exactly, then regenerate the component's snapshot:
 
    ```bash
-   npm run components:test -- -u
+   cd packages/components && npx jest <Component> -u
    ```
+
+   Do **not** use `npm run components:test -- -u` from the repo root: that script goes through turbo, which does not forward `-u` to jest — npm warns `Unknown cli config "--u"` and the run fails on the very snapshot mismatch you are trying to record.
 
    Open the regenerated `.snap` and sanity-check the new language's output before moving on — the real correctness gate is the integration-snapshot diff in the closing steps.
 
@@ -135,7 +146,7 @@ Execute in order:
 
 1. **Run the translation protocol** for each target file in the injection map: build the idiom map, then write the golden snippet.
 
-2. **Write the template code.** Write the template/component code so it renders exactly the golden snippet — the rendered output is the contract, and closing step 2's snapshot diff verifies it. All translation decisions were already made in the golden snippet; nothing new gets invented here.
+2. **Write the template code.** Write the template/component code so it renders exactly the golden snippet — the rendered output is the contract, and closing step 3's snapshot diff verifies it. All translation decisions were already made in the golden snippet; nothing new gets invented here.
 
 3. **Do not create a new shared component during this port**, even though the logic now exists in reference + N targets after this change. Porting and deduping are separate concerns — deduping is deliberately deferred to the handoff step below.
 
@@ -143,7 +154,13 @@ Execute in order:
 
 Run these regardless of which branch you executed:
 
-1. **Regenerate integration snapshots** for the protocol:
+1. **Rebuild the shared package if the port touched `packages/components/src`** (Branch A always does). Integration tests transpile templates against `packages/components/lib/` (Babel output), not `src/` — and the direct jest run in Branch A step 3 does not rebuild it, so skipping this regenerates snapshots against stale component code:
+
+   ```bash
+   cd packages/components && npm run build
+   ```
+
+2. **Regenerate integration snapshots** for the protocol:
 
    ```bash
    cd packages/templates/clients/<protocol>/test/integration-test && npm run test:update
@@ -151,30 +168,30 @@ Run these regardless of which branch you executed:
 
    or per client: `npm run test:<lang>:update`.
 
-2. **Diff the snapshots as the correctness gate:**
+3. **Diff the snapshots as the correctness gate:**
 
    ```bash
    git diff packages/templates/clients/<protocol>/test/integration-test/__snapshots__/
    ```
 
-   This is where the translation protocol's output gets verified: the added snapshot lines must match the golden snippet from protocol step 2 — not merely "look right." Modest whitespace churn elsewhere is expected; any deviation from the golden snippet, or large semantic diffs (different method names, missing lines, changed body content), means a step above is wrong — usually the idiom map or the code that consumed it. Fix the offending step and re-run steps 1–2 rather than accepting the diff.
+   This is where the translation protocol's output gets verified: the added snapshot lines must match the golden snippet from protocol step 2 — not merely "look right." Modest whitespace churn elsewhere is expected; any deviation from the golden snippet, or large semantic diffs (different method names, missing lines, changed body content), means a step above is wrong — usually the idiom map or the code that consumed it. Fix the offending step and re-run steps 2–3 rather than accepting the diff.
 
-3. **Run the full check** from the repo root:
+4. **Run the full check** from the repo root:
 
    ```bash
    npm run templates:test
    npm run lint
    ```
 
-4. **Branch A only — regenerate the components API docs:**
+5. **Branch A only — regenerate the components API docs:**
 
    ```bash
    turbo run docs --filter=@asyncapi/generator-components
    ```
 
-   then `git diff apps/generator/docs/api_components.md`. An empty diff means the new config entry's JSDoc is missing or malformed (per AGENT.md §2.4, this doc is a committed artifact that must be regenerated in the same PR as any public-signature change).
+   then `git diff apps/generator/docs/api_components.md`. Interpret the diff by what actually changed: the repo's jsdoc2md handlebars template publishes only **function-level** JSDoc (description, `@param`, `@returns`, `@example`) — `@typedef` unions are never emitted into the doc. If the port only extended the `Language` typedef and added config entries, an empty diff is *correct*; confirm by grepping the published file for the component's section rather than looping on rewrites of good JSDoc. Only if a function-level JSDoc block changed (or a new public component was added) does an empty diff mean the JSDoc is missing or malformed (per AGENT.md §2.4, this doc is a committed artifact that must be regenerated in the same PR as any public-signature change).
 
-5. **Changeset reminder.** Per AGENT.md §2.5, `packages/templates/*` is private/unpublished, so target this change at `@asyncapi/generator` — plus `@asyncapi/generator-components` too if Branch A touched the shared package's public component signature.
+6. **Changeset reminder.** Per AGENT.md §2.5, `packages/templates/*` is private/unpublished, so target this change at `@asyncapi/generator` — plus `@asyncapi/generator-components` too if Branch A touched the shared package's public component signature.
 
 ## Dedup detection & handoff
 
