@@ -139,3 +139,49 @@ Keep `Claim` and `Evidence` to one line each; the reader has the PR open in anot
 - **Abort** — stop. Nothing has been edited, committed, or posted. This is also how you dry-run the skill against a PR you do not own.
 
 Do not edit any file, run any test, or post anything before the user picks "Run as shown".
+
+## Execute
+
+Only rows the user approved. Work through them in table order.
+
+- **Group by file.** Fixes in the same file run one after another so edits do not collide.
+- **Inline by default.** Make each change yourself with `Edit`. Change only what the item requires; no drive-by refactors, no renamed variables, no reformatting.
+- **Parallelize only when it pays.** If approved `fix` rows touch three or more files that share no imports, dispatch one `general-purpose` agent per file with this prompt shape and wait for all of them:
+
+  ```
+  You are fixing one review item in asyncapi/generator. Edit only <path>.
+  Item: <claim>
+  Verdict and evidence: <verdict> — <evidence>
+  Make the minimal change that resolves the item. Do not run tests, do not commit, do not touch other files. Report the exact lines you changed.
+  ```
+
+- **Never paste a "Committable suggestion".** CodeRabbit's suggestion diffs are paraphrases of the lines it saw at review time and often no longer match HEAD. Write the fix from your own reading of the current code.
+- **`defer` rows.** Dispatch one `Explore` agent per row: "Research context for a PR review item in asyncapi/generator. File: <path>. Claim: <claim>. Why unclear: <evidence>. Report what the fix would need to touch and any risks." When they return, print a mini-table of just those rows with a proposed action and ask once more (Run as shown / Edit rows / Skip all deferred).
+- **`already fixed`, `reject`, `discuss`, `skip` rows** need no edits. They are handled in "Reply and resolve".
+
+## Verify locally
+
+Run `git diff --name-only` and apply every matching row of this matrix. Commands run from the repo root unless a directory is named. This table is the single place to update when a new package or template lands.
+
+| Changed path | Commands |
+|---|---|
+| `packages/components/src/**` | In `packages/components`: `npm run build`, then `npx jest`, then `npm run docs` (rewrites `apps/generator/docs/api_components.md`). Root: `npm run components:lint`. Snapshot regen: `npx jest -u` inside `packages/components`. Never `npm run components:test -- -u`; turbo swallows the flag. |
+| `packages/helpers/src/**` | `npm run helpers:test`, `npm run helpers:lint` |
+| `packages/templates/clients/websocket/<client>/**` | If `packages/components/src` also changed, run `npm run build` in `packages/components` first (integration tests transpile against `lib/`). Then in `packages/templates/clients/websocket/test/integration-test`: `npm run test:<client>` where `<client>` is `dart`, `python`, `javascript`, or `java-quarkus`. Then in the client directory: `npm test` and `npm run lint`. Snapshot regen: `npm run test:<client>:update` in the integration-test directory. |
+| `packages/templates/clients/kafka/**` | In `packages/templates/clients/kafka/test/integration-test`: `npm test`. In the template directory: `npm run lint`. |
+| `apps/generator/lib/generator.js` | `npm run generator:test:unit`, `npm run generator:docs` (rewrites `apps/generator/docs/api.md`), `npm run generator:lint` |
+| other `apps/generator/**` | `npm run generator:test:unit`, `npm run generator:lint` |
+| `apps/react-sdk/src/**` | `npx turbo run test --filter=@asyncapi/generator-react-sdk`, then `npm run docs` in `apps/react-sdk` (rewrites `apps/react-sdk/API.md`) |
+| `apps/keeper/**` | `npm run keeper:test`, `npm run keeper:lint` |
+| `apps/hooks/**` | `npm run hooks:test`, `npx turbo run lint --filter=@asyncapi/generator-hooks` |
+| `.github/workflows/**` | `actionlint` if `command -v actionlint` succeeds; otherwise note in the report that CI runs actionlint. |
+| `*.md` only | `npx markdownlint-cli <file>` if the package is installed; otherwise no test step. |
+| `.changeset/**` | No command. Covered by the ripple check below. |
+
+**On failure:** stop before committing. Show the failing command and the last 40 lines of its output, then ask: fix forward, revert the item that caused it (`git checkout -- <files>` for that item only), or stop.
+
+**Ripple confirmation** after all commands pass:
+
+1. **Snapshots.** `git diff --stat -- '**/__snapshots__/**'`. Every changed snapshot must be explained by an approved fix. Unexplained churn is a stop: revert the snapshot and re-check the fix.
+2. **Docs.** If a public signature changed in `packages/components/src`, `apps/generator/lib/generator.js`, or `apps/react-sdk/src`, the matching docs file (`apps/generator/docs/api_components.md`, `apps/generator/docs/api.md`, `apps/react-sdk/API.md`) must appear in `git diff --name-only`. If it does not, the docs command above did not run; run it.
+3. **Changesets.** Map every changed path to its published package with the AGENTS.md §2.5 table (`packages/templates/**` and `apps/generator/**` → `@asyncapi/generator`; `packages/components/**` → `@asyncapi/generator-components`; `packages/helpers/**` → `@asyncapi/generator-helpers`; `apps/keeper/**` → `@asyncapi/keeper`; `apps/react-sdk/**` → `@asyncapi/generator-react-sdk`). `grep -l "<package>" .changeset/*.md` must hit for each. If one is missing, add a `patch` changeset for it and list it in the report. Never name a `packages/templates/*` package in a changeset.
