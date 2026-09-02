@@ -178,6 +178,93 @@ Run `git diff --name-only` and apply every matching row of this matrix. Commands
 | `*.md` only | `npx markdownlint-cli <file>` if the package is installed; otherwise no test step. |
 | `.changeset/**` | No command. Covered by the ripple check below. |
 
+## Commit
+
+The repo squashes on merge and concatenates commit messages into the squash body, so this commit body becomes permanent history. Write it for a maintainer reading `git log` in a year.
+
+- **Subject:** Conventional Commits, same type prefix as `pr_title` (`feat:`, `fix:`, `chore:`, `docs:`, `ci:`…), imperative mood, describing what changed. Not "address review comments". Example: `fix: guard language lookup against inherited keys in RegisterOutgoingProcessor`.
+- **Body:** one bullet per handled item, `<path>: <decision>`. Declined Tier 2 nitpicks go here too, with the reason and the marker, for example `- packages/.../example.dart.js: kept local hasSend predicate; Main.js needs it before example.dart.js renders (cr-comment:v1:59dfbc8a0b7983eb24b92e21)`. The marker is what lets a later run skip this nitpick.
+- **Scope:** `git add` only the files the approved fixes and their ripple touched (fixes, snapshots, docs files, changesets). Never `git add -A`.
+- **Release semantics:** the PR title decides releases, not this commit. Never edit the PR title.
+- **Disclosure:** check `pr_body` for a non-empty `Generated-by:` line or a checked "No AI assistance" box. If neither is present, add a warning to the report: "PR body lacks a `Generated-by:` line; this run was AI-assisted, so add one per AI-POLICY.md." Do not edit the PR body.
+- **Push** only if `--push` was passed: `git push`. Otherwise the report reminds the user.
+
+## Reply and resolve
+
+Post replies only after the commit exists, so `<sha>` is real (`git rev-parse --short HEAD`). Replies are short and factual: what changed and why, or what fact makes the claim not apply. No emoji, no thanks, no restating the comment, no "invalid" when talking to a human.
+
+| Tier | `fix` | `reject` / declined | `already fixed` | `discuss` |
+|---|---|---|---|---|
+| 1 CodeRabbit thread | Reply `Fixed in <sha>. <one sentence>`, then resolve | Reply with the code fact, or quote the AGENTS.md section and number, then resolve | Reply `Already addressed in <sha of the fixing commit>.`, then resolve | n/a |
+| 2 CodeRabbit nitpick | No post. The fix and the commit body speak | Collect all declined nitpicks; post **one** PR comment (below) | Treat as declined with reason "no longer applies at HEAD" | n/a |
+| 3 Human thread | Reply `Fixed in <sha>. <one sentence>`. **Never resolve** | n/a | Reply naming the commit. **Never resolve** | Post `reply_draft`. **Never resolve** |
+
+Reply to a thread (works for Tier 1 and 3):
+
+```bash
+gh api --method POST repos/<owner>/<repo>/pulls/<pr_number>/comments/<comment_db_id>/replies -f body='<text>'
+```
+
+Resolve a thread (Tier 1 only):
+
+```bash
+gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thread_id>"}) { thread { isResolved } } }'
+```
+
+Combined nitpick comment (Tier 2, only when at least one nitpick was declined):
+
+```bash
+gh api --method POST repos/<owner>/<repo>/issues/<pr_number>/comments -f body='Declined CodeRabbit nitpicks after checking each against the current code:
+
+- `<path>:<line>` — <reason>
+- `<path>:<line>` — <reason>'
+```
+
+If any post fails, do not retry more than once. Continue with the rest and list the unposted text in the report.
+
+## Report
+
+Print, in this order:
+
+1. Tables for **Fixed**, **Rejected**, **Already fixed**, **Discussed** (Tier 3), **Deferred**, **Skipped**: columns `File`, `Reason` (one line). Omit empty tables.
+2. **Commit:** short sha and subject. **Files changed:** list. **Regenerated:** snapshots and docs files. **Changesets:** added or edited.
+3. **Status signals:** SonarQube gate result, changeset-bot package list.
+4. **Warnings:** missing `Generated-by:`, unposted replies (with the text), matrix rows skipped because a tool was not installed.
+5. **Deferred details:** one paragraph per deferred item with the Explore findings, so the next session starts from it.
+6. Unless `--push` was passed: `Run git push when ready. CodeRabbit re-reviews automatically on push.`
+
+## Error handling
+
+| Condition | Behaviour |
+|---|---|
+| No PR for the branch and no argument | Stop. Suggest `gh pr create` or a PR number. |
+| Dirty working tree | Stop. Name the dirty files. |
+| Current branch differs from `head_branch` | Stop. Name both. Suggest `gh pr checkout <pr_number>`. |
+| No open items after harvest | Report "No open review items" plus status signals. Stop. |
+| Comment cites a file that no longer exists | Verdict `already fixed`. Reply says the file was removed in `<sha>`. |
+| Cannot tell what fix is wanted | Verdict `unclear`, action `defer`. |
+| A verification command fails | Halt before commit; offer fix forward, revert that item, or stop. |
+| Reply or resolve call fails | One retry, then continue; put the text in the report. |
+| `resolveReviewThread` returns a permission error | Report once. Do not retry. The user may lack write access on a fork PR. |
+
+## Non-goals
+
+- Pre-PR self-review of uncommitted changes (`/code-review`).
+- Editing the PR title or description.
+- Force-pushing or rewriting history.
+- Resolving threads opened by humans.
+- Applying any suggestion without verifying it at HEAD.
+- Posting `@coderabbitai review`; `.coderabbit.yaml` already enables incremental review on push.
+- Fetching or handling resolved threads.
+
+## Reference materials
+
+- `AGENTS.md` §2.4 (JSDoc scope), §2.5 (changeset mapping), §4.1–§4.7 (per-package rules).
+- `apps/generator/docs/ai-tooling.md`: CodeRabbit is advisory; declined suggestions need a stated reason.
+- `apps/generator/docs/ai-policy.md`: `Generated-by:` disclosure.
+- `.github/pr-review-checklist.md` item 10: bot comments must be visibly addressed.
+- `packages/templates/clients/websocket/test/README.md`: `TEST_CLIENT` scoping and snapshot layout.
+
 **On failure:** stop before committing. Show the failing command and the last 40 lines of its output, then ask: fix forward, revert the item that caused it (`git checkout -- <files>` for that item only), or stop.
 
 **Ripple confirmation** after all commands pass:
