@@ -71,7 +71,7 @@ For each target client, find the file(s) structurally equivalent to the referenc
 
 Structural equivalence is by **role**, not always by filename — e.g. python declares instance fields in `Constructor.js` while dart declares them in `ClientFields.js`; the root example file's equivalent is the target's own root example file.
 
-This table is **the injection map** — the execution steps edit exactly these target files and no others. If a target has no structurally equivalent file at all (`Exists? = no` — the feature would need an entirely new file, not an edit to an existing one), flag that row — that's a bigger change than this skill's mechanical scope assumes, and the user should confirm before you proceed.
+This table is **the injection map** — the execution steps edit exactly these target files and no others, with one exemption: Branch A additionally edits the shared component itself under `packages/components/` (its config map and `Language` typedef in `src/components/<Component>.js`, and its test in `test/components/<Component>.test.js`). Those files are per-feature rather than per-target, so they are not rows in this table; the Branch A execution steps name them explicitly. If a target has no structurally equivalent file at all (`Exists? = no` — the feature would need an entirely new file, not an edit to an existing one), flag that row — that's a bigger change than this skill's mechanical scope assumes, and the user should confirm before you proceed.
 
 ## Translation protocol (run for every target language, in both branches)
 
@@ -130,7 +130,7 @@ Execute in order:
 
 2. **Wire the shared component into targets that don't call it yet.** Add the import, plumb the required prop through the call chain the same way the reference sources it (e.g. via a helper like `getQueryParams`), and render the shared component with `language='<target>'` (and `framework='<target-framework>'` where applicable).
 
-3. **Extend the shared component's test.** If `packages/components/test/components/<Component>.test.js` exists, add one snapshot case per new language branch, following the existing per-language case pattern exactly, then regenerate the component's snapshot:
+3. **Extend the shared component's test.** Add one snapshot case per new language branch to `packages/components/test/components/<Component>.test.js`, following the existing per-language case pattern exactly. If that test file does not exist yet, create it first, modeled on a sibling component's test — per AGENT.md §4.5 every shared component must have its own tests, so a missing file is a gap to close, not a reason to skip this step. Then regenerate the component's snapshot:
 
    ```bash
    cd packages/components && npx jest <Component> -u
@@ -191,7 +191,7 @@ Run these regardless of which branch you executed:
 
    then `git diff apps/generator/docs/api_components.md`. Interpret the diff by what actually changed: the repo's jsdoc2md handlebars template publishes only **function-level** JSDoc (description, `@param`, `@returns`, `@example`) — `@typedef` unions are never emitted into the doc. If the port only extended the `Language` typedef and added config entries, an empty diff is *correct*; confirm by grepping the published file for the component's section rather than looping on rewrites of good JSDoc. Only if a function-level JSDoc block changed (or a new public component was added) does an empty diff mean the JSDoc is missing or malformed (per AGENT.md §2.4, this doc is a committed artifact that must be regenerated in the same PR as any public-signature change).
 
-6. **Changeset reminder.** Per AGENT.md §2.5, `packages/templates/*` is private/unpublished, so target this change at `@asyncapi/generator` — plus `@asyncapi/generator-components` too if Branch A touched the shared package's public component signature.
+6. **Changeset reminder.** Per AGENT.md §2.5, `packages/templates/*` is private/unpublished, so target this change at `@asyncapi/generator`. Add `@asyncapi/generator-components` as well whenever Branch A modified anything under `packages/components` — a new config-map entry changes the published package's rendered output even though the component's prop signature is unchanged, so the signature alone is not the trigger.
 
 ## Dedup detection & handoff
 

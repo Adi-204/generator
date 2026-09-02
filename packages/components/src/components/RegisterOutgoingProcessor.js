@@ -60,7 +60,11 @@ void registerOutgoingProcessor(dynamic Function(dynamic) processor) {
  */
 export function RegisterOutgoingProcessor({ language }) {
   const supportedLanguages = Object.keys(registerOutgoingProcessorConfig);
-  const source = registerOutgoingProcessorConfig[language];
+  // Inherited keys such as "constructor" would otherwise resolve to a truthy non-string
+  // value and skip the unsupported-language error path.
+  const source = Object.hasOwn(registerOutgoingProcessorConfig, language)
+    ? registerOutgoingProcessorConfig[language]
+    : undefined;
 
   if (!source) {
     throw unsupportedLanguage(language, supportedLanguages);
