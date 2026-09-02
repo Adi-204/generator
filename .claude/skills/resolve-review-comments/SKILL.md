@@ -178,6 +178,14 @@ Run `git diff --name-only` and apply every matching row of this matrix. Commands
 | `*.md` only | `npx markdownlint-cli <file>` if the package is installed; otherwise no test step. |
 | `.changeset/**` | No command. Covered by the ripple check below. |
 
+**On failure:** stop before committing. Show the failing command and the last 40 lines of its output, then ask: fix forward, revert the item that caused it (`git checkout -- <files>` for that item only), or stop.
+
+**Ripple confirmation** after all commands pass:
+
+1. **Snapshots.** `git diff --stat -- '**/__snapshots__/**'`. Every changed snapshot must be explained by an approved fix. Unexplained churn is a stop: revert the snapshot and re-check the fix.
+2. **Docs.** If a public signature changed in `packages/components/src`, `apps/generator/lib/generator.js`, or `apps/react-sdk/src`, the matching docs file (`apps/generator/docs/api_components.md`, `apps/generator/docs/api.md`, `apps/react-sdk/API.md`) must appear in `git diff --name-only`. If it does not, the docs command above did not run; run it.
+3. **Changesets.** Map every changed path to its published package with the AGENTS.md §2.5 table (`packages/templates/**` and `apps/generator/**` → `@asyncapi/generator`; `packages/components/**` → `@asyncapi/generator-components`; `packages/helpers/**` → `@asyncapi/generator-helpers`; `apps/keeper/**` → `@asyncapi/keeper`; `apps/react-sdk/**` → `@asyncapi/generator-react-sdk`). `grep -l "<package>" .changeset/*.md` must hit for each. If one is missing, add a `patch` changeset for it and list it in the report. Never name a `packages/templates/*` package in a changeset.
+
 ## Commit
 
 The repo squashes on merge and concatenates commit messages into the squash body, so this commit body becomes permanent history. Write it for a maintainer reading `git log` in a year.
@@ -264,11 +272,3 @@ Print, in this order:
 - `apps/generator/docs/ai-policy.md`: `Generated-by:` disclosure.
 - `.github/pr-review-checklist.md` item 10: bot comments must be visibly addressed.
 - `packages/templates/clients/websocket/test/README.md`: `TEST_CLIENT` scoping and snapshot layout.
-
-**On failure:** stop before committing. Show the failing command and the last 40 lines of its output, then ask: fix forward, revert the item that caused it (`git checkout -- <files>` for that item only), or stop.
-
-**Ripple confirmation** after all commands pass:
-
-1. **Snapshots.** `git diff --stat -- '**/__snapshots__/**'`. Every changed snapshot must be explained by an approved fix. Unexplained churn is a stop: revert the snapshot and re-check the fix.
-2. **Docs.** If a public signature changed in `packages/components/src`, `apps/generator/lib/generator.js`, or `apps/react-sdk/src`, the matching docs file (`apps/generator/docs/api_components.md`, `apps/generator/docs/api.md`, `apps/react-sdk/API.md`) must appear in `git diff --name-only`. If it does not, the docs command above did not run; run it.
-3. **Changesets.** Map every changed path to its published package with the AGENTS.md §2.5 table (`packages/templates/**` and `apps/generator/**` → `@asyncapi/generator`; `packages/components/**` → `@asyncapi/generator-components`; `packages/helpers/**` → `@asyncapi/generator-helpers`; `apps/keeper/**` → `@asyncapi/keeper`; `apps/react-sdk/**` → `@asyncapi/generator-react-sdk`). `grep -l "<package>" .changeset/*.md` must hit for each. If one is missing, add a `patch` changeset for it and list it in the report. Never name a `packages/templates/*` package in a changeset.
