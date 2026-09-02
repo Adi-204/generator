@@ -85,3 +85,57 @@ gh api repos/<owner>/<repo>/issues/<pr_number>/comments --paginate --jq '.[] | s
 ```
 
 If the list of items is empty after steps 1 and 2, report "No open review items on PR #<pr_number>" together with the status signals, and stop.
+
+## Verify each item
+
+This is the step that earns the skill its keep. Do not skip or rush it. For every item, `Read` the file at `path` with about ten lines of context around `line`, then answer these four questions in order and write one-line evidence for the answer:
+
+1. **Does the code say what the comment claims?** Check the exact lines. Reviewers misquote and cite stale line numbers.
+2. **Is the interpretation right given the full context?** Look for handling elsewhere in the file or package (a guard clause above, a wrapper in the caller, a test that already covers it).
+3. **Would the suggested fix be correct and safe?** Would it break a sibling client, a snapshot, or a published API?
+4. **Is the item still relevant at HEAD?** A later commit on this branch may already have fixed it.
+
+Verdicts:
+
+| Verdict | When |
+|---|---|
+| `valid` | The claim holds and the fix is sound. |
+| `invalid` | The claim does not hold, misreads context, or the fix would break something. Style-only preferences that no lint rule enforces are also `invalid`. |
+| `already fixed` | The claim held at review time but HEAD no longer has the issue, or the file is gone. |
+| `unclear` | You cannot tell what fix is wanted, or the fix has implications beyond the cited file that need research. |
+
+### Generator-specific checks
+
+**Cited guideline check.** When a claim says "as per coding guidelines" or `_Source: Coding guidelines_`, find the matching section in `AGENTS.md` and quote its operative sentence in the evidence. These citations are frequently misapplied. Known misfires, each `invalid` with a reply that quotes the section:
+
+| CodeRabbit asks for | Why it is wrong | Cite |
+|---|---|---|
+| JSDoc on a generator internal such as `lib/utils.js`, `lib/parser.js`, `lib/logMessages.js` | Only `apps/generator/lib/generator.js` is scanned by jsdoc2md; internals need no JSDoc | AGENTS.md §2.4 |
+| A changeset naming a `packages/templates/*` package | Those packages are private and unpublished; template changes ship via `@asyncapi/generator` | AGENTS.md §2.5 |
+| A dedicated test for a purely presentational template-local component | Template-local component tests are conditional-only; presentational components are covered by integration and acceptance tests | AGENTS.md §4.7 |
+| Promoting a component to `packages/components` when one template uses it | Promotion needs two or more templates | AGENTS.md §4.5 |
+
+The reverse also applies: when a citation is accurate (for example "every shared component must have its own tests", §4.5, or "every exported helper needs a test", §4.6) the verdict is `valid` even if the change feels small.
+
+**Fix-ripple prediction.** For every `valid` item, look up each file you expect to edit in the matrix under "Verify locally" and write the ripple in one line, for example `rebuild components lib; regen dart+js snapshots; api_components.md; changeset generator-components`. The user approves the full cost, not just the edit.
+
+**Severity carry-over.** Keep CodeRabbit's severity tag in the `Tier/Sev` column and sort by it. Severity never changes a verdict; a `🔵 Trivial` claim that is true is still `valid`, a `🟠 Major` claim that is false is still `invalid`.
+
+**Human-thread care.** For Tier 3 items an `invalid` verdict maps to the action `discuss`, never `reject`. Write the reply draft as evidence plus a question, for example: "The null guard is at line 38, so this path cannot receive null. Did you mean the `options` argument instead?"
+
+Map verdict to default action: `valid` → `fix`; `invalid` → `reject` (Tier 1, 2) or `discuss` (Tier 3); `already fixed` → `already fixed`; `unclear` → `defer`.
+
+## Triage gate
+
+Present one markdown table, sorted: Tier 1 by severity (Major, Minor, Trivial), then Tier 2 by severity, then Tier 3. Columns, in this order:
+
+| # | Tier/Sev | File:line | Claim | Verdict | Evidence | Action | Ripple | Reply draft |
+|---|---|---|---|---|---|---|---|---|
+
+Keep `Claim` and `Evidence` to one line each; the reader has the PR open in another window. Then ask once with `AskUserQuestion`:
+
+- **Run as shown** — execute every row with its listed action.
+- **Edit rows** — the user replies in free text with row numbers and new actions (`3 skip, 5 fix, 7 reject`). Re-print the table with the edits and ask again.
+- **Abort** — stop. Nothing has been edited, committed, or posted. This is also how you dry-run the skill against a PR you do not own.
+
+Do not edit any file, run any test, or post anything before the user picks "Run as shown".
