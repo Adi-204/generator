@@ -54,7 +54,7 @@ Keep threads with `isResolved == false`. Classify by the **first** comment's aut
 | `coderabbitai` | 1 | Bot finding. The PR author may resolve it. |
 | anyone else | 3 | Human reviewer. Only the reviewer resolves it. |
 
-Record per thread: `thread_id` (the `id`, `PRRT_…`), `comment_db_id` (first comment's `databaseId`), `path`, `line`, `author`, `is_outdated`, and `claim` (the first comment's body plus any later replies, so you see what has already been said). Keep outdated-but-unresolved threads: they usually mean "already fixed" and only need a reply and a resolve. Read the CodeRabbit severity tag from the first line of the body (`_🟠 Major_`, `_🟡 Minor_`, `_🔵 Trivial_`) into `severity`.
+Record per thread: `thread_id` (the `id`, `PRRT_…`), `comment_db_id` (first comment's `databaseId`), `path`, `line`, `author`, `is_outdated`, and `claim` (the first comment's body plus any later replies, so you see what has already been said). Keep outdated-but-unresolved threads: they usually mean "already fixed" and only need a reply and a resolve. Read the CodeRabbit severity tag from the first line of the body (`_🟠 Major_`, `_🟡 Minor_`, `_🔵 Trivial_`) into `severity`. For Tier 3 threads there is no tag; record `severity` as `n/a`.
 
 ### 2. CodeRabbit nitpicks (Tier 2)
 
@@ -64,7 +64,7 @@ Nitpicks are not threads. They live in collapsed blocks inside CodeRabbit's revi
 gh api repos/<owner>/<repo>/pulls/<pr_number>/reviews --paginate --jq '.[] | select(.user.login=="coderabbitai[bot]") | .body'
 ```
 
-In each body, read **only** the block whose summary is `🧹 Nitpick comments (N)`. Its shape is: one nested collapsed block per file with the path in the `<summary>`, and inside it one entry per nitpick made of a backticked line or range, then `_category_ | _severity_ | _effort_`, a bold one-sentence title, body text, an HTML comment `<!-- cr-comment:v1:<hex> -->`, and sometimes `_Source: Coding guidelines_`. Record `path`, `line` (the range), `severity`, `claim` (title plus body), and `marker` (the full `cr-comment:v1:<hex>` string).
+In each body, read **only** the block whose summary is `🧹 Nitpick comments (N)`. Its shape is: one nested collapsed block per file with the path in the `<summary>`, and inside it one entry per nitpick made of a backticked line or range, then `_category_ | _severity_ | _effort_`, a bold one-sentence title, body text, an HTML comment `<!-- cr-comment:v1:<hex> -->`, and sometimes `_Source: Coding guidelines_`. Record `path`, `line` (the range), `severity`, `claim` (title plus body), `marker` (the full `cr-comment:v1:<hex>` string), and `author` as `coderabbitai`.
 
 Drop a nitpick when either holds:
 
