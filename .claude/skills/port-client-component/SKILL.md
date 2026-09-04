@@ -133,10 +133,10 @@ Execute in order:
 3. **Extend the shared component's test.** Add one snapshot case per new language branch to `packages/components/test/components/<Component>.test.js`, following the existing per-language case pattern exactly. If that test file does not exist yet, create it first, modeled on a sibling component's test — per AGENT.md §4.5 every shared component must have its own tests, so a missing file is a gap to close, not a reason to skip this step. Then regenerate the component's snapshot:
 
    ```bash
-   cd packages/components && npx jest <Component> -u
+   cd packages/components && npm run test:update -- <Component>
    ```
 
-   Do **not** use `npm run components:test -- -u` from the repo root: that script goes through turbo, which does not forward `-u` to jest — npm warns `Unknown cli config "--u"` and the run fails on the very snapshot mismatch you are trying to record.
+   This rebuilds `lib/` and then runs jest with `-u`, scoped to that component's suite.
 
    Open the regenerated `.snap` and sanity-check the new language's output before moving on — the real correctness gate is the integration-snapshot diff in the closing steps.
 
@@ -154,10 +154,10 @@ Execute in order:
 
 Run these regardless of which branch you executed:
 
-1. **Rebuild the shared package if the port touched `packages/components/src`** (Branch A always does). Integration tests transpile templates against `packages/components/lib/` (Babel output), not `src/` — and the direct jest run in Branch A step 3 does not rebuild it, so skipping this regenerates snapshots against stale component code:
+1. **Rebuild the shared package if the port touched `packages/components/src`** (Branch A always does). Integration tests transpile templates against `packages/components/lib/` (Babel output), not `src/`. The `test:update` run in Branch A step 3 already rebuilds `lib/`, so this step is only needed if you edited `src/` again after it — but skipping it in that case regenerates snapshots against stale component code:
 
    ```bash
-   cd packages/components && npm run build
+   npm run components:build
    ```
 
 2. **Regenerate integration snapshots** for the protocol:
