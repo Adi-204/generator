@@ -191,10 +191,12 @@ When a commit was made, post replies only after it exists, so `<sha>` is real (`
 
 `<rule>` is the general rule with its AGENTS.md section, not the one-off fact; the `@coderabbitai` tag makes the bot store it as a learning.
 
-Reply to a thread (Tier 1 and 2). Write the text to a temp file with the `Write` tool and pass it with `-F body=@file`; an inline `-f body='...'` argument breaks on apostrophes and backticks.
+Reply to a thread (Tier 1 and 2). Feed the text through stdin with a quoted heredoc (`-F body=@-`); an inline `-f body='...'` argument breaks on apostrophes and backticks, and a temp file would need cleanup.
 
 ```bash
-gh api --method POST repos/<owner>/<repo>/pulls/<pr_number>/comments/<comment_db_id>/replies -F body=@<reply-file>
+gh api --method POST repos/<owner>/<repo>/pulls/<pr_number>/comments/<comment_db_id>/replies -F body=@- <<'EOF'
+<reply text>
+EOF
 ```
 
 Resolve a thread (Tier 1 only):
