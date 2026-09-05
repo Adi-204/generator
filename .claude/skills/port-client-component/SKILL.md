@@ -133,7 +133,7 @@ Execute in order:
 3. **Extend the shared component's test.** Add one snapshot case per new language branch to `packages/components/test/components/<Component>.test.js`, following the existing per-language case pattern exactly. If that test file does not exist yet, create it first, modeled on a sibling component's test — per AGENT.md §4.5 every shared component must have its own tests, so a missing file is a gap to close, not a reason to skip this step. Then regenerate the component's snapshot:
 
    ```bash
-   cd packages/components && npm run test:update -- <Component>
+   (cd packages/components && npm run test:update -- <Component>)
    ```
 
    This rebuilds `lib/` and then runs jest with `-u`, scoped to that component's suite.
@@ -163,7 +163,7 @@ Run these regardless of which branch you executed:
 2. **Regenerate integration snapshots** for the protocol:
 
    ```bash
-   cd packages/templates/clients/<protocol>/test/integration-test && npm run test:update
+   (cd packages/templates/clients/<protocol>/test/integration-test && npm run test:update)
    ```
 
    or per client: `npm run test:<lang>:update`.
